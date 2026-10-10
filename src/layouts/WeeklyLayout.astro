@@ -1,0 +1,504 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+interface Props {
+  title: string;
+  description?: string;
+  currentId: string;
+  allPosts: CollectionEntry<'blog'>[];
+}
+
+const { title, description = SITE_DESCRIPTION, currentId, allPosts } = Astro.props;
+
+// 构建搜索数据索引
+const searchIndex = allPosts.map((post) => ({
+  id: post.id,
+  title: post.data.title,
+  description: post.data.description || '',
+  date: post.data.pubDate.toLocaleDateString('zh-CN'),
+  url: `/blog/${post.id}/`,
+}));
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <BaseHead title={`${title} | ${SITE_TITLE}`} description={description} />
+    <style>
+      :root {
+        --sidebar-w: 280px;
+        --border-color: #f0f0f2;
+        --active-color: #d97706;
+        --active-bg: #fffbeb;
+        --text-main: #1f2937;
+        --text-muted: #6b7280;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+        color: var(--text-main);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      .magazine-container {
+        display: flex;
+        min-height: 100vh;
+        width: 100%;
+      }
+      
+      /* 左侧侧边栏结构：使用 flex 布局，分为顶部 Logo、中间滚动文章列表、底部辅助导航 */
+      .sidebar {
+        width: var(--sidebar-w);
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        border-right: 1px solid var(--border-color);
+        box-sizing: border-box;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        background-color: #ffffff;
+      }
+      
+      .sidebar-header {
+        padding: 1.75rem 1.25rem 1rem 1.5rem;
+      }
+      .site-brand {
+        font-size: 1.25rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        color: var(--text-main);
+        transition: opacity 0.2s;
+      }
+      .site-brand:hover {
+        opacity: 0.8;
+      }
+
+      /* 中间周刊期刊列表：独立垂直滚动 */
+      .sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 1.25rem 1rem 1.5rem;
+        scrollbar-width: thin;
+      }
+      .sidebar-content::-webkit-scrollbar {
+        width: 4px;
+      }
+      .sidebar-content::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+        border-radius: 4px;
+      }
+
+      .post-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      .nav-item a {
+        display: block;
+        padding: 0.55rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.92rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: all 0.15s ease-in-out;
+      }
+      .nav-item a:hover {
+        background-color: #f9fafb;
+        color: var(--text-main);
+      }
+      .nav-item.is-active a {
+        color: var(--active-color);
+        background-color: var(--active-bg);
+        font-weight: 600;
+      }
+
+      /* 侧边栏底部导航：Home / About */
+      .sidebar-footer {
+        padding: 1rem 1.5rem 1.5rem;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.88rem;
+      }
+      .sidebar-footer a {
+        color: var(--text-muted);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: color 0.15s;
+      }
+      .sidebar-footer a:hover {
+        color: var(--active-color);
+      }
+      .sidebar-footer .divider {
+        color: #e5e7eb;
+      }
+
+      /* 右侧主视口 */
+      .main-area {
+        flex: 1;
+        min-width: 0;
+        padding: 2.5rem 3.5rem;
+        display: flex;
+        flex-direction: column;
+      }
+      .content-wrapper {
+        max-width: 820px;
+        width: 100%;
+      }
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        gap: 1rem;
+      }
+      .top-bar h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.2;
+      }
+      .actions {
+        display: flex;
+        gap: 0.5rem;
+        position: relative;
+      }
+      .action-btn {
+        background: #f3f4f6;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.2s;
+      }
+      .action-btn:hover {
+        background: #e5e7eb;
+      }
+
+      /* 复制反馈 Toast */
+      .toast-tip {
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-20px);
+        background: #111827;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.88rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.25s ease;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      .toast-tip.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* 搜索弹窗 */
+      .search-modal {
+        border: none;
+        border-radius: 14px;
+        padding: 0;
+        width: 90%;
+        max-width: 560px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+      .search-modal::backdrop {
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(2px);
+      }
+      .search-box {
+        padding: 1.25rem;
+      }
+      .search-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 14px;
+        font-size: 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        outline: none;
+      }
+      .search-input:focus {
+        border-color: var(--active-color);
+      }
+      .search-results {
+        list-style: none;
+        margin: 1rem 0 0 0;
+        padding: 0;
+        max-height: 320px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .search-item a {
+        display: block;
+        padding: 10px 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--text-main);
+        background: #f9fafb;
+        transition: background 0.15s;
+      }
+      .search-item a:hover {
+        background: var(--active-bg);
+        color: var(--active-color);
+      }
+      .search-item .res-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+      .search-item .res-desc {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .no-result {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        padding: 1.5rem 0;
+      }
+
+      /* 移动端响应式 */
+      @media (max-width: 860px) {
+        .magazine-container {
+          flex-direction: column;
+        }
+        .sidebar {
+          width: 100%;
+          height: auto;
+          position: relative;
+          border-right: none;
+          border-bottom: 1px solid var(--border-color);
+        }
+        .sidebar-content {
+          max-height: 220px;
+        }
+        .main-area {
+          padding: 1.5rem 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="magazine-container">
+      <aside class="sidebar">
+        <!-- 顶部 Logo：点击回到 /blog -->
+        <div class="sidebar-header">
+          <a href="/blog" class="site-brand" title="返回周刊主页 / 全部文章">
+            <span>☕</span>
+            <span>{SITE_TITLE}</span>
+          </a>
+        </div>
+
+        <!-- 中间周刊列表 -->
+        <div class="sidebar-content">
+          <ul class="post-nav">
+            {
+              allPosts.map((post) => (
+                <li class={`nav-item ${post.id === currentId ? 'is-active' : ''}`}>
+                  <a href={`/blog/${post.id}/`} title={post.data.title}>
+                    {post.data.title}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        <!-- 侧边栏底部快捷链接 -->
+        <nav class="sidebar-footer" aria-label="快捷导航">
+          <a href="/">首页</a>
+          <span class="divider">/</span>
+          <a href="/blog">全部文章</a>
+          <span class="divider">/</span>
+          <a href="/about">关于</a>
+        </nav>
+      </aside>
+
+      <!-- 右侧正文区域 -->
+      <main class="main-area">
+        <div class="content-wrapper">
+          <header class="top-bar">
+            <h1>{title}</h1>
+            <div class="actions">
+              <button class="action-btn" id="btn-share" title="复制文章链接" aria-label="复制文章链接">
+                🔗
+              </button>
+              <button class="action-btn" id="btn-search" title="搜索文章 (快捷键 ⌘K / Ctrl+K)" aria-label="搜索文章">
+                🔍
+              </button>
+            </div>
+          </header>
+          <slot />
+        </div>
+        <Footer />
+      </main>
+    </div>
+
+    <!-- 复制提示 Toast -->
+    <div id="toast" class="toast-tip">链接已复制到剪贴板</div>
+
+    <!-- 搜索弹窗 -->
+    <dialog id="search-modal" class="search-modal">
+      <div class="search-box">
+        <input
+          type="search"
+          id="search-input"
+          class="search-input"
+          placeholder="搜索文章标题或关键词..."
+          autocomplete="off"
+        />
+        <ul id="search-results" class="search-results"></ul>
+      </div>
+    </dialog>
+
+    <script id="search-data" type="application/json" set:html={JSON.stringify(searchIndex)} />
+
+    <script>
+      // 1. 左侧高亮项目居中
+      const activeItem = document.querySelector('.nav-item.is-active');
+      if (activeItem) {
+        activeItem.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
+
+      // 2. 复制链接
+      const shareBtn = document.getElementById('btn-share');
+      const toast = document.getElementById('toast');
+      shareBtn?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          if (toast) {
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+          }
+        } catch (err) {
+          console.error('复制失败:', err);
+        }
+      });
+
+      // 3. 搜索交互
+      const searchBtn = document.getElementById('btn-search');
+      const searchModal = document.getElementById('search-modal') as HTMLDialogElement | null;
+      const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+      const searchResults = document.getElementById('search-results');
+      const searchDataScript = document.getElementById('search-data');
+      const postsIndex = searchDataScript?.textContent ? JSON.parse(searchDataScript.textContent) : [];
+
+      function openSearch() {
+        searchModal?.showModal();
+        searchInput?.focus();
+        renderResults(searchInput?.value || '');
+      }
+
+      function closeSearch() {
+        searchModal?.close();
+        if (searchInput) searchInput.value = '';
+      }
+
+      function renderResults(keyword: string) {
+        if (!searchResults) return;
+        const kw = keyword.trim().toLowerCase();
+        if (!kw) {
+          searchResults.innerHTML = postsIndex
+            .slice(0, 6)
+            .map(
+              (p: any) => `
+              <li class="search-item">
+                <a href="${p.url}">
+                  <div class="res-title">${p.title}</div>
+                  <div class="res-desc">${p.date} ${p.description ? '· ' + p.description : ''}</div>
+                </a>
+              </li>
+            `
+            )
+            .join('');
+          return;
+        }
+
+        const matched = postsIndex.filter(
+          (p: any) => p.title.toLowerCase().includes(kw) || p.description.toLowerCase().includes(kw)
+        );
+
+        if (matched.length === 0) {
+          searchResults.innerHTML = `<li class="no-result">未找到包含 "${keyword}" 的文章</li>`;
+          return;
+        }
+
+        searchResults.innerHTML = matched
+          .map(
+            (p: any) => `
+            <li class="search-item">
+              <a href="${p.url}">
+                <div class="res-title">${p.title}</div>
+                <div class="res-desc">${p.date} ${p.description ? '· ' + p.description : ''}</div>
+              </a>
+            </li>
+          `
+          )
+          .join('');
+      }
+
+      // 打开弹窗
+      searchBtn?.addEventListener('click', openSearch);
+	    // 输入筛选
+      searchInput?.addEventListener('input', (e) => {
+        renderResults((e.target as HTMLInputElement).value);
+      });
+
+      // 点击外部关闭弹窗
+      searchModal?.addEventListener('click', (e) => {
+        const rect = searchModal.getBoundingClientRect();
+        const isInDialog =
+          rect.top <= e.clientY &&
+          e.clientY <= rect.top + rect.height &&
+          rect.left <= e.clientX &&
+          e.clientX <= rect.left + rect.width;
+        if (!isInDialog) {
+          closeSearch();
+        }
+      });
+
+      // 全局快捷键 ⌘K / Ctrl+K
+      window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          if (searchModal?.open) {
+            closeSearch();
+          } else {
+            openSearch();
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

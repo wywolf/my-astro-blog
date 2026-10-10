@@ -1,20 +1,105 @@
 ---
+import { Image } from 'astro:assets';
 import { type CollectionEntry, getCollection, render } from 'astro:content';
-import BlogPost from '../../layouts/BlogPost.astro';
+import WeeklyLayout from '../../layouts/WeeklyLayout.astro';
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog');
-	return posts.map((post) => ({
-		params: { slug: post.id },
-		props: post,
-	}));
-}
-type Props = CollectionEntry<'blog'>;
+  const posts = await getCollection('blog');
+  // 按发布时间降序排列（最新发布的在最上面）
+  const sortedPosts = posts.sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+  );
 
-const post = Astro.props;
+  return sortedPosts.map((post) => ({
+    params: { slug: post.id },
+    props: { post, allPosts: sortedPosts },
+  }));
+}
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+  allPosts: CollectionEntry<'blog'>[];
+}
+
+const { post, allPosts } = Astro.props;
 const { Content } = await render(post);
 ---
 
-<BlogPost {...post.data}>
-	<Content />
-</BlogPost>
+<WeeklyLayout
+  title={post.data.title}
+  description={post.data.description}
+  currentId={post.id}
+  allPosts={allPosts}
+>
+  <article class="article-content">
+    {
+      post.data.heroImage && (
+        <div class="cover-wrapper">
+          <Image
+            src={post.data.heroImage}
+            alt={post.data.title}
+            class="cover-image"
+          />
+        </div>
+      )
+    }
+    <div class="markdown-body">
+      <Content />
+    </div>
+  </article>
+</WeeklyLayout>
+
+<style>
+  .cover-wrapper {
+    margin-bottom: 2rem;
+  }
+  .cover-image {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    display: block;
+    object-fit: cover;
+  }
+  .markdown-body :global(h2) {
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.45rem;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 0.5rem;
+  }
+  .markdown-body :global(h3) {
+    margin-top: 1.75rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.15rem;
+  }
+  .markdown-body :global(p) {
+    line-height: 1.8;
+    margin-bottom: 1.25rem;
+    color: #374151;
+    font-size: 1.02rem;
+  }
+  .markdown-body :global(img) {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 1.25rem 0;
+  }
+  .markdown-body :global(blockquote) {
+    margin: 1.5rem 0;
+    padding: 0.85rem 1.25rem;
+    border-left: 4px solid #f59e0b;
+    background: #fffbeb;
+    border-radius: 4px;
+    color: #4b5563;
+  }
+  .markdown-body :global(a) {
+    color: #2563eb;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .markdown-body :global(pre) {
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+</style>
