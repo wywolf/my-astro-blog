@@ -51,55 +51,107 @@ const { Content } = await render(post);
 
 <style>
   .cover-wrapper {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
   .cover-image {
     width: 100%;
     height: auto;
-    border-radius: 12px;
+    border-radius: 10px;
     display: block;
     object-fit: cover;
   }
+  /* 二级标题：字号调小、间距适度收紧 */
   .markdown-body :global(h2) {
-    margin-top: 2.5rem;
-    margin-bottom: 1rem;
-    font-size: 1.45rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
     border-bottom: 1px solid #f3f4f6;
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
   }
+  /* 三级标题 */
   .markdown-body :global(h3) {
-    margin-top: 1.75rem;
-    margin-bottom: 0.5rem;
-    font-size: 1.15rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.4rem;
+    font-size: 1.05rem;
+    font-weight: 600;
   }
+  /* 正文段落：字号由 1.02rem 调小到 0.92rem，行高更紧凑舒适 */
   .markdown-body :global(p) {
-    line-height: 1.8;
-    margin-bottom: 1.25rem;
+    line-height: 1.68;
+    margin-bottom: 0.95rem;
     color: #374151;
-    font-size: 1.02rem;
+    font-size: 0.92rem;
+  }
+  /* 列表项：补充字号控制 */
+  .markdown-body :global(ul),
+  .markdown-body :global(ol) {
+    padding-left: 1.35rem;
+    margin-bottom: 1rem;
+    font-size: 0.92rem;
+    color: #374151;
+    line-height: 1.65;
+  }
+  .markdown-body :global(li) {
+    margin-bottom: 0.35rem;
+  }
+  /* 行内代码标记 */
+  .markdown-body :global(:not(pre) > code) {
+    font-size: 0.85em;
+    background-color: #f3f4f6;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    color: #1f2937;
+  }
+  /* 表格样式支持 */
+  .markdown-body :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.25rem 0;
+    font-size: 0.88rem;
+  }
+  .markdown-body :global(th),
+  .markdown-body :global(td) {
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .markdown-body :global(th) {
+    background-color: #f9fafb;
+    font-weight: 600;
   }
   .markdown-body :global(img) {
     max-width: 100%;
     border-radius: 8px;
-    margin: 1.25rem 0;
+    margin: 1rem 0;
   }
+  /* 引用块：字号微缩 */
   .markdown-body :global(blockquote) {
-    margin: 1.5rem 0;
-    padding: 0.85rem 1.25rem;
+    margin: 1.25rem 0;
+    padding: 0.75rem 1rem;
     border-left: 4px solid #f59e0b;
     background: #fffbeb;
     border-radius: 4px;
     color: #4b5563;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .markdown-body :global(blockquote p) {
+    margin-bottom: 0;
+    font-size: 0.9rem;
   }
   .markdown-body :global(a) {
     color: #2563eb;
     text-decoration: underline;
-    text-underline-offset: 4px;
+    text-underline-offset: 3px;
   }
+  /* 代码块：字体微缩，更显紧凑 */
   .markdown-body :global(pre) {
-    padding: 1rem;
+    padding: 0.85rem 1rem;
     border-radius: 8px;
-    margin: 1.5rem 0;
+    margin: 1.25rem 0;
     overflow-x: auto;
+    font-size: 0.84rem;
+    line-height: 1.55;
   }
 </style>
